@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Complete Your Purchase</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Course Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            {% if course.thumbnail %}
+                                <img src="{{ course.thumbnail.url }}" class="img-fluid rounded" alt="{{ course.title }}">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                                    <i class="fas fa-book fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h4>{{ course.title }}</h4>
+                            <p class="text-muted">{{ course.short_description }}</p>
+                            <div class="mb-2">
+                                <span class="badge difficulty-{{ course.difficulty_level }} me-2">
+                                    {{ course.get_difficulty_level_display }}
+                                </span>
+                                <span class="badge bg-info me-2">{{ course.duration_weeks }} weeks</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-lg text-primary me-2"></i>
+                                <span>{{ course.instructor.get_full_name|default:course.instructor.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="border-top pt-3 mb-4">
+                        <div class="d-flex justify-content-between">
+                            <span>Course Price:</span>
+                            <span class="fw-bold">${{ course.price }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                            <span class="fw-bold">Total:</span>
+                            <span class="fw-bold text-primary">${{ course.price }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Form -->
+                    <form id="payment-form">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method</label>
+                            <div id="card-element" class="form-control" style="height: 50px; padding: 10px;">
+                                <!-- Stripe Elements will create form elements here -->
+                            </div>
+                            <div id="card-errors" role="alert" class="text-danger mt-2"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button id="submit-button" class="btn btn-primary btn-lg w-100" type="submit">
+                            <span id="button-text">Pay ${{ course.price }}</span>
+                            <div id="spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></div>
+                        </button>
+                    </form>
+
+                    <!-- Security badges -->
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-lock me-1"></i>
+                            Secured by Stripe. Your payment information is encrypted and secure.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+#card-element {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 10px;
+}
+
+#card-element.focused {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.difficulty-beginner { background-color: #198754; }
+.difficulty-intermediate { background-color: #fd7e14; }
+.difficulty-advanced { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Stripe
+    const stripe = Stripe('{{ stripe_publishable_key }}');
+    const elements = stripe.elements();
+
+    // Create card element
+    const cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                    color: '#aab7c4',
+                },
+            },
+        },
+    });
+
+    cardElement.mount('#card-element');
+
+    // Handle real-time validation errors from the card Element
+    cardElement.on('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
+
+    // Handle form submission
+    const form = document.getElementById('payment-form');
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+
+        // Disable submit button and show loading
+        submitButton.disabled = true;
+        spinner.classList.remove('d-none');
+        buttonText.textContent = 'Processing...';
+
+        try {
+            // Create payment intent
+            const response = await fetch('/payments/create-payment-intent/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    course_id: {{ course.id }}
+                })
+            });
+
+            const {client_secret, error} = await response.json();
+
+            if (error) {
+                throw new Error(error);
+            }
+
+            // Confirm payment
+            const {error: stripeError} = await stripe.confirmCardPayment(client_secret, {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: '{{ user.get_full_name|default:user.username }}',
+                        email: '{{ user.email }}',
+                    }
+                }
+            });
+
+            if (stripeError) {
+                // Show error to customer
+                const errorElement = document.getElementById('card-errors');
+                errorElement.textContent = stripeError.message;
+            } else {
+                // Payment succeeded, redirect to success page
+                const urlParams = new URLSearchParams();
+                urlParams.append('payment_intent', client_secret.split('_secret')[0]);
+                window.location.href = '/payments/success/?' + urlParams.toString();
+            }
+        } catch (error) {
+            const errorElement = document.getElementById('card-errors');
+            errorElement.textContent = error.message;
+        } finally {
+            // Re-enable submit button
+            submitButton.disabled = false;
+            spinner.classList.add('d-none');
+            buttonText.textContent = 'Pay ${{ course.price }}';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} - Django Academy{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Course Content -->
+        <div class="col-lg-8">
+            <!-- Course Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Courses</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'category_courses' course.category.slug %}">{{ course.category.name }}</a></li>
+                        <li class="breadcrumb-item active">{{ course.title }}</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="display-5 fw-bold">{{ course.title }}</h1>
+                <p class="lead">{{ course.short_description }}</p>
+                
+                <div class="mb-3">
+                    <span class="badge difficulty-{{ course.difficulty_level }} me-2">
+                        {{ course.get_difficulty_level_display }}
+                    </span>
+                    <span class="badge bg-info me-2">{{ course.duration_weeks }} weeks</span>
+                    <span class="badge bg-secondary">{{ course.category.name }}</span>
+                </div>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        <i class="fas fa-user-circle fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ course.instructor.get_full_name|default:course.instructor.username }}</h6>
+                        <small class="text-muted">Instructor</small>
+                    </div>
+                </div>
+                
+                {% if avg_rating %}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-2">
+                                {% for i in "12345"|make_list %}
+                                    {% if i|add:0 <= avg_rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="fw-bold">{{ avg_rating }}</span>
+                            <span class="text-muted ms-1">({{ reviews.count }} reviews)</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Course Video/Image -->
+            {% if course.trailer_video %}
+                <div class="mb-4">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="{{ course.trailer_video }}" allowfullscreen></iframe>
+                    </div>
+                </div>
+            {% elif course.thumbnail %}
+                <div class="mb-4">
+                    <img src="{{ course.thumbnail.url }}" class="img-fluid rounded" alt="{{ course.title }}">
+                </div>
+            {% endif %}
+            
+            <!-- Course Description -->
+            <div class="mb-5">
+                <h3>About This Course</h3>
+                <div class="course-description">
+                    {{ course.description|linebreaks }}
+                </div>
+            </div>
+            
+            <!-- What You'll Learn -->
+            <div class="mb-5">
+                <h3>What You'll Learn</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ course.what_you_learn|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Requirements -->
+            {% if course.requirements %}
+                <div class="mb-5">
+                    <h3>Requirements</h3>
+                    {{ course.requirements|linebreaks }}
+                </div>
+            {% endif %}
+            
+            <!-- Course Content -->
+            <div class="mb-5">
+                <h3>Course Content</h3>
+                <div class="accordion" id="courseAccordion">
+                    {% for section in sections %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ section.id }}">
+                                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                        type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ section.id }}">
+                                    <div class="d-flex justify-content-between w-100 me-3">
+                                        <span>{{ section.title }}</span>
+                                        <span class="badge bg-primary">{{ section.lessons.count }} lessons</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ section.id }}" 
+                                 class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                                 data-bs-parent="#courseAccordion">
+                                <div class="accordion-body">
+                                    {% if section.description %}
+                                        <p class="text-muted">{{ section.description }}</p>
+                                    {% endif %}
+                                    
+                                    <ul class="list-unstyled">
+                                        {% for lesson in section.lessons.all %}
+                                            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-play-circle text-primary me-2"></i>
+                                                    <span>{{ lesson.title }}</span>
+                                                    {% if lesson.is_preview %}
+                                                        <span class="badge bg-success ms-2">Preview</span>
+                                                    {% endif %}
+                                                </div>
+                                                <small class="text-muted">{{ lesson.duration_minutes }} min</small>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Reviews Section -->
+            <div class="mb-5">
+                <h3>Student Reviews</h3>
+                
+                {% if user.is_authenticated and has_purchased %}
+                    <!-- Add Review Form -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5>Write a Review</h5>
+                            <form method="POST" action="{% url 'add_course_review' course.id %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label">Rating</label>
+                                    <div class="rating-input">
+                                        {% for i in "12345"|make_list %}
+                                            <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                                            <label for="star{{ i }}" class="star">★</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="review" class="form-label">Review</label>
+                                    <textarea class="form-control" name="review" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit Review</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Reviews List -->
+                {% for review in reviews %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6>{{ review.user.get_full_name|default:review.user.username }}</h6>
+                                    <div class="mb-2">
+                                        {% for i in "12345"|make_list %}
+                                            {% if i|add:0 <= review.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p>{{ review.review }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No reviews yet. Be the first to review this course!</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h2 class="price-tag display-6">${{ course.price }}</h2>
+                    </div>
+                    
+                    {% if has_purchased %}
+                        <a href="{% url 'course_learn' course.id %}" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="fas fa-play"></i> Continue Learning
+                        </a>
+                    {% else %}
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'payments:checkout' course.id %}" class="btn btn-primary btn-lg w-100 mb-3">
+                                <i class="fas fa-shopping-cart"></i> Enroll Now
+                            </a>
+                        {% else %}
+                            <a href="{% url 'admin:login' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                                <i class="fas fa-sign-in-alt"></i> Login to Enroll
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Course Info -->
+                    <ul class="list-unstyled">
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span><i class="fas fa-clock text-primary"></i> Duration</span>
+                            <span>{{ course.duration_weeks }} weeks</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span><i class="fas fa-signal text-primary"></i> Level</span>
+                            <span>{{ course.get_difficulty_level_display }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span><i class="fas fa-users text-primary"></i> Students</span>
+                            <span>{{ course.purchases.count }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span><i class="fas fa-list text-primary"></i> Lessons</span>
+                            <span>
+                                {% with total_lessons=0 %}
+                                    {% for section in sections %}
+                                        {% with total_lessons=total_lessons|add:section.lessons.count %}{% endwith %}
+                                    {% endfor %}
+                                    {{ total_lessons }}
+                                {% endwith %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.rating-input input[type="radio"] {
+    display: none;
+}
+
+.rating-input label.star {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-input input[type="radio"]:checked ~ label.star,
+.rating-input label.star:hover,
+.rating-input label.star:hover ~ label.star {
+    color: #ffc107;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Course detail functionality can be added here
+</script>
+{% endblock %}

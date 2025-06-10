@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Academy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 sidebar-nav">
+            <div class="list-group">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="{% url 'my_learning' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-book me-2"></i> My Learning
+                </a>
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user me-2"></i> Profile
+                </a>
+                <a href="{% url 'certificates' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-certificate me-2"></i> Certificates
+                </a>
+                <a href="{% url 'course_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-search me-2"></i> Browse Courses
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>My Profile</h2>
+                <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card profile-card">
+                        <div class="card-body text-center">
+                            <div class="profile-image-container mb-3">
+                                {% if user.userprofile.profile_image %}
+                                    <img src="{{ user.userprofile.profile_image.url }}" alt="Profile Picture" class="profile-image">
+                                {% else %}
+                                    <div class="profile-image bg-secondary d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-user fa-3x text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <h4>{{ user.get_full_name|default:user.username }}</h4>
+                            <p class="text-muted">@{{ user.username }}</p>
+                            {% if user.userprofile.bio %}
+                                <p class="bio">{{ user.userprofile.bio }}</p>
+                            {% endif %}
+                            
+                            <!-- Social Links -->
+                            <div class="social-links mt-3">
+                                {% if user.userprofile.linkedin_url %}
+                                    <a href="{{ user.userprofile.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+                                        <i class="fab fa-linkedin"></i>
+                                    </a>
+                                {% endif %}
+                                {% if user.userprofile.github_url %}
+                                    <a href="{{ user.userprofile.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm me-2">
+                                        <i class="fab fa-github"></i>
+                                    </a>
+                                {% endif %}
+                                {% if user.userprofile.twitter_url %}
+                                    <a href="{{ user.userprofile.twitter_url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                        <i class="fab fa-twitter"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Profile Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">First Name</label>
+                                    <p class="mb-0">{{ user.first_name|default:"Not provided" }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Last Name</label>
+                                    <p class="mb-0">{{ user.last_name|default:"Not provided" }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Email</label>
+                                    <p class="mb-0">{{ user.email }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Username</label>
+                                    <p class="mb-0">{{ user.username }}</p>
+                                </div>
+                                {% if user.userprofile.birth_date %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Birth Date</label>
+                                    <p class="mb-0">{{ user.userprofile.birth_date }}</p>
+                                </div>
+                                {% endif %}
+                                {% if user.userprofile.location %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Location</label>
+                                    <p class="mb-0">{{ user.userprofile.location }}</p>
+                                </div>
+                                {% endif %}
+                                {% if user.userprofile.phone_number %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Phone</label>
+                                    <p class="mb-0">{{ user.userprofile.phone_number }}</p>
+                                </div>
+                                {% endif %}
+                                {% if user.userprofile.website %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Website</label>
+                                    <p class="mb-0"><a href="{{ user.userprofile.website }}" target="_blank">{{ user.userprofile.website }}</a></p>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Preferred Language</label>
+                                    <p class="mb-0">{{ user.userprofile.get_preferred_language_display }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Member Since</label>
+                                    <p class="mb-0">{{ user.date_joined|date:"F Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sidebar-nav {
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 76px);
+    padding: 20px 0;
+}
+
+.profile-card {
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.profile-image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f8f9fa;
+}
+
+.bio {
+    font-style: italic;
+    color: #6c757d;
+}
+
+.stat-item {
+    padding: 15px;
+    border-right: 1px solid #e9ecef;
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+
+.social-links .btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,251 @@
+{# filepath: /home/anas/Coding/Django/academy/templates/blog/post_list.html #}
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block blog_content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold">
+                        {% if current_category %}
+                            Category: {{ current_category|title }}
+                        {% elif current_tag %}
+                            Tag: #{{ current_tag|title }}
+                        {% elif query %}
+                            Search Results for "{{ query }}"
+                        {% else %}
+                            All Blog Posts
+                        {% endif %}
+                    </h1>
+                    <p class="text-muted">{{ page_obj.paginator.count }} post{{ page_obj.paginator.count|pluralize }} found</p>
+                </div>
+                
+                <!-- Search Form -->
+                <div class="col-md-4">
+                    <form method="GET" action="{% url 'blog:search' %}" class="d-flex">
+                        <input type="text" name="query" class="form-control search-box me-2" 
+                               placeholder="Search posts..." value="{{ query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Posts Grid -->
+            {% if posts %}
+            <div class="row">
+                {% for post in posts %}
+                <div class="col-md-6 mb-4">
+                    <div class="card blog-card h-100">
+                        {% if post.featured_image %}
+                        <div class="position-relative">
+                            <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}">
+                            {% if post.featured %}
+                            <div class="featured-badge">
+                                <i class="fas fa-star"></i> Featured
+                            </div>
+                            {% endif %}
+                            <div class="reading-time">
+                                <i class="fas fa-clock"></i> {{ post.reading_time }} min read
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="bg-gradient position-relative" style="height: 200px; background: linear-gradient(45deg, #667eea, #764ba2);">
+                            {% if post.featured %}
+                            <div class="featured-badge">
+                                <i class="fas fa-star"></i> Featured
+                            </div>
+                            {% endif %}
+                            <div class="reading-time">
+                                <i class="fas fa-clock"></i> {{ post.reading_time }} min read
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            {% if post.category %}
+                            <span class="badge bg-primary mb-2 align-self-start">{{ post.category.name }}</span>
+                            {% endif %}
+                            
+                            <h5 class="card-title">
+                                <a href="{{ post.get_absolute_url }}" class="text-decoration-none text-dark">{{ post.title }}</a>
+                            </h5>
+                            
+                            <p class="card-text text-muted">{{ post.excerpt|truncatewords:20 }}</p>
+                            
+                            <!-- Tags -->
+                            {% if post.tags.all %}
+                            <div class="mb-2">
+                                {% for tag in post.tags.all %}
+                                <a href="{{ tag.get_absolute_url }}" class="badge bg-light text-dark text-decoration-none me-1">
+                                    #{{ tag.name }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-auto">
+                                <div class="blog-meta d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-calendar"></i> {{ post.published_at|date:"M d, Y" }}
+                                    </div>
+                                </div>
+                                <div class="blog-meta d-flex justify-content-between align-items-center mt-2">
+                                    <div>
+                                        <i class="fas fa-eye"></i> {{ post.views_count }} views
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-comments"></i> {{ post.comments.count }} comments
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Blog pagination" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if query %}&query={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in page_obj.paginator.page_range %}
+                    {% if page_num == page_obj.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% elif page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_num }}{% if query %}&query={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&query={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_tag %}&tag={{ current_tag }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- No Posts Found -->
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">No posts found</h3>
+                <p class="text-muted">
+                    {% if query %}
+                        Try adjusting your search terms or browse all posts.
+                    {% else %}
+                        Check back later for new content.
+                    {% endif %}
+                </p>
+                <a href="{% url 'blog:post_list' %}" class="btn btn-primary">Browse All Posts</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Categories -->
+            {% if categories %}
+            <div class="sidebar-widget">
+                <h5><i class="fas fa-folder"></i> Categories</h5>
+                {% for category in categories %}
+                <div class="category-item d-flex justify-content-between">
+                    <a href="{{ category.get_absolute_url }}" class="text-decoration-none 
+                       {% if current_category == category.slug %}fw-bold text-primary{% endif %}">
+                        {{ category.name }}
+                    </a>
+                    <span class="badge bg-light text-dark">{{ category.post_count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Popular Tags -->
+            {% if popular_tags %}
+            <div class="sidebar-widget">
+                <h5><i class="fas fa-tags"></i> Popular Tags</h5>
+                <div class="tag-cloud">
+                    {% for tag in popular_tags %}
+                    <a href="{{ tag.get_absolute_url }}" class="badge text-decoration-none me-1 mb-1
+                       {% if current_tag == tag.slug %}bg-primary{% else %}bg-light text-dark{% endif %}">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Posts -->
+            {% if recent_posts %}
+            <div class="sidebar-widget">
+                <h5><i class="fas fa-clock"></i> Recent Posts</h5>
+                {% for post in recent_posts %}
+                <div class="recent-post-item">
+                    <h6 class="mb-1">
+                        <a href="{{ post.get_absolute_url }}" class="text-decoration-none">{{ post.title|truncatewords:8 }}</a>
+                    </h6>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i> {{ post.published_at|date:"M d, Y" }}
+                        <span class="ms-2"><i class="fas fa-eye"></i> {{ post.views_count }}</span>
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Newsletter Signup -->
+            <div class="sidebar-widget newsletter-section">
+                <h5 class="mb-3"><i class="fas fa-envelope"></i> Stay Updated</h5>
+                <p class="mb-3">Get the latest articles delivered to your inbox.</p>
+                
+                <form id="newsletter-form" method="POST" action="{% url 'blog:newsletter_signup' %}">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="email" name="email" class="form-control" placeholder="Your email" required>
+                        <button type="submit" class="btn btn-light">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} - Learning{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 sidebar">
+            <div class="p-3">
+                <h5 class="mb-3">{{ course.title }}</h5>
+                
+                {% for section in sections %}
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">
+                            <i class="fas fa-folder"></i> {{ section.title }}
+                        </h6>
+                        
+                        {% for lesson in section.lessons.all %}
+                            <div class="lesson-item {% if lesson.id == current_lesson.id %}bg-primary text-white{% endif %}" 
+                                 onclick="loadLesson({{ lesson.id }})">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        {% if lesson.lesson_type == 'video' %}
+                                            <i class="fas fa-play-circle me-2"></i>
+                                        {% elif lesson.lesson_type == 'text' %}
+                                            <i class="fas fa-file-text me-2"></i>
+                                        {% elif lesson.lesson_type == 'quiz' %}
+                                            <i class="fas fa-question-circle me-2"></i>
+                                        {% endif %}
+                                        <span class="small">{{ lesson.title }}</span>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-check-circle text-success" style="display: none;"></i>
+                                        <small class="text-muted">{{ lesson.duration_minutes }}m</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="p-4">
+                {% if current_lesson %}
+                    <!-- Lesson Header -->
+                    <div class="mb-4">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="{% url 'my_courses' %}">My Courses</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'course_detail' course.id %}">{{ course.title }}</a></li>
+                                <li class="breadcrumb-item active">{{ current_lesson.title }}</li>
+                            </ol>
+                        </nav>
+                        
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h2>{{ current_lesson.title }}</h2>
+                                <p class="text-muted">{{ current_lesson.description }}</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline-success btn-sm" id="markCompleteBtn">
+                                    <i class="fas fa-check"></i> Mark Complete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lesson Content -->
+                    <div id="lessonContent">
+                        {% if current_lesson.lesson_type == 'video' %}
+                            {% if current_lesson.video_file %}
+                                <div class="ratio ratio-16x9 mb-4">
+                                    <video controls class="rounded">
+                                        <source src="{{ current_lesson.video_file.url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            {% elif current_lesson.video_url %}
+                                <div class="ratio ratio-16x9 mb-4">
+                                    <iframe src="{{ current_lesson.video_url }}" allowfullscreen class="rounded"></iframe>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if current_lesson.content %}
+                            <div class="lesson-text-content">
+                                {{ current_lesson.content|linebreaks }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if current_lesson.attachments %}
+                            <div class="mt-4">
+                                <h5>Attachments</h5>
+                                <a href="{{ current_lesson.attachments.url }}" class="btn btn-outline-primary" download>
+                                    <i class="fas fa-download"></i> Download Resources
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Navigation -->
+                    <div class="mt-5">
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-secondary" id="prevLessonBtn">
+                                <i class="fas fa-arrow-left"></i> Previous Lesson
+                            </button>
+                            <button class="btn btn-primary" id="nextLessonBtn">
+                                Next Lesson <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-play-circle fa-3x text-muted mb-3"></i>
+                        <h3>Welcome to {{ course.title }}</h3>
+                        <p class="text-muted">Select a lesson from the sidebar to get started.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentLessonId = {{ current_lesson.id|default:"null" }};
+
+function loadLesson(lessonId) {
+    window.location.href = `/courses/lesson/${lessonId}/`;
+}
+
+function markLessonComplete() {
+    if (!currentLessonId) return;
+    
+    $.ajax({
+        url: '{% url "update_lesson_progress" %}',
+        method: 'POST',
+        data: {
+            'lesson_id': currentLessonId,
+            'progress_percentage': 100,
+            'is_completed': true,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                // Update UI to show completion
+                $(`.lesson-item[onclick="loadLesson(${currentLessonId})"] .fa-check-circle`).show();
+                $('#markCompleteBtn').html('<i class="fas fa-check"></i> Completed').removeClass('btn-outline-success').addClass('btn-success');
+            }
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#markCompleteBtn').click(markLessonComplete);
+    
+    // Video progress tracking
+    $('video').on('timeupdate', function() {
+        let video = this;
+        let progress = (video.currentTime / video.duration) * 100;
+        
+        // Update progress every 10%
+        if (progress % 10 < 1) {
+            $.ajax({
+                url: '{% url "update_lesson_progress" %}',
+                method: 'POST',
+                data: {
+                    'lesson_id': currentLessonId,
+                    'progress_percentage': Math.floor(progress),
+                    'is_completed': progress >= 90,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

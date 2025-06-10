@@ -1,0 +1,255 @@
+{# filepath: /home/anas/Coding/Django/academy/templates/blog/base_blog.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.blog-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+}
+
+.blog-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.blog-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.blog-card img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.blog-meta {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.blog-meta i {
+    margin-right: 5px;
+}
+
+.tag-cloud .badge {
+    margin: 2px;
+    font-size: 0.85rem;
+}
+
+.sidebar-widget {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.sidebar-widget h5 {
+    color: #495057;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.category-item, .recent-post-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.category-item:last-child, .recent-post-item:last-child {
+    border-bottom: none;
+}
+
+.comment-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 30px;
+    margin-top: 40px;
+}
+
+.comment-item {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.comment-reply {
+    margin-left: 40px;
+    margin-top: 15px;
+}
+
+.search-box {
+    border-radius: 25px;
+    border: 2px solid #e9ecef;
+    padding: 10px 20px;
+}
+
+.search-box:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.featured-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.reading-time {
+    background: rgba(0,0,0,0.7);
+    color: white;
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.pagination .page-link {
+    border-radius: 25px;
+    margin: 0 2px;
+    border: none;
+    color: #667eea;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.newsletter-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+}
+
+.social-share .btn {
+    margin: 0 5px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% block blog_content %}
+{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Blog-specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Newsletter form submission
+    const newsletterForm = document.getElementById('newsletter-form');
+    if (newsletterForm) {
+        newsletterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('{% url "blog:newsletter_signup" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    this.reset();
+                } else {
+                    alert('Error: ' + JSON.stringify(data.errors));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+    
+    // Comment form submission (AJAX)
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const postSlug = this.dataset.postSlug;
+            
+            fetch(`/blog/post/${postSlug}/comment/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': formData.get('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Reload to show new comment
+                } else {
+                    alert('Error: ' + JSON.stringify(data.errors));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    }
+    
+    // Reply button functionality
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const parentIdInput = document.getElementById('parent_id');
+            if (parentIdInput) {
+                parentIdInput.value = commentId;
+            }
+            
+            // Scroll to comment form
+            document.getElementById('comment-form').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+    
+    // Social share buttons
+    document.querySelectorAll('.social-share .btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.href;
+            if (url) {
+                window.open(url, 'share', 'width=600,height=400');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

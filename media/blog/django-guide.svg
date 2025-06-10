@@ -1,0 +1,41 @@
+<svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="djangoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#092e20;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0c4b33;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="600" height="400" fill="url(#djangoGradient)"/>
+  
+  <!-- Django logo style -->
+  <g transform="translate(200, 150)">
+    <rect width="200" height="100" rx="10" fill="rgba(255,255,255,0.1)"/>
+    <text x="100" y="35" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
+      Django
+    </text>
+    <text x="100" y="55" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Arial, sans-serif" font-size="14">
+      The Web Framework
+    </text>
+    <text x="100" y="75" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Arial, sans-serif" font-size="14">
+      for Perfectionists
+    </text>
+  </g>
+  
+  <!-- Code snippet decoration -->
+  <g transform="translate(50, 50)">
+    <rect width="120" height="80" rx="5" fill="rgba(255,255,255,0.1)"/>
+    <rect x="10" y="10" width="100" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="20" width="80" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="30" width="90" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="40" width="70" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+  </g>
+  
+  <g transform="translate(430, 270)">
+    <rect width="120" height="80" rx="5" fill="rgba(255,255,255,0.1)"/>
+    <rect x="10" y="10" width="100" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="20" width="80" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="30" width="90" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="10" y="40" width="70" height="4" rx="2" fill="rgba(255,255,255,0.3)"/>
+  </g>
+</svg>

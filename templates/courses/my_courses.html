@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}My Courses - Django Academy{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">My Courses</h1>
+            
+            {% if purchases %}
+                <div class="row">
+                    {% for purchase in purchases %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card course-card h-100">
+                                {% if purchase.course.thumbnail %}
+                                    <img src="{{ purchase.course.thumbnail.url }}" class="card-img-top" alt="{{ purchase.course.title }}" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top bg-primary d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-play-circle fa-3x text-white"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ purchase.course.title }}</h5>
+                                    <p class="card-text text-muted">{{ purchase.course.short_description|truncatewords:15 }}</p>
+                                    
+                                    <div class="mb-2">
+                                        <span class="badge difficulty-{{ purchase.course.difficulty_level }}">
+                                            {{ purchase.course.get_difficulty_level_display }}
+                                        </span>
+                                        <span class="badge bg-info">{{ purchase.course.duration_weeks }} weeks</span>
+                                    </div>
+                                    
+                                    <!-- Progress Bar -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small>Progress</small>
+                                            <small class="text-muted">0%</small> <!-- Will be calculated via JS or view -->
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <small class="text-muted d-block mb-2">
+                                            Purchased: {{ purchase.purchased_at|date:"M d, Y" }}
+                                        </small>
+                                        <a href="{% url 'course_learn' purchase.course.id %}" class="btn btn-primary w-100">
+                                            <i class="fas fa-play"></i> Continue Learning
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                    <h3>No courses yet</h3>
+                    <p class="text-muted">Start your learning journey by enrolling in a course.</p>
+                    <a href="{% url 'course_list' %}" class="btn btn-primary">Browse Courses</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

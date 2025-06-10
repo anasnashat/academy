@@ -1,0 +1,182 @@
+{# filepath: /home/anas/Coding/Django/academy/templates/blog/home.html #}
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block blog_content %}
+<!-- Blog Header -->
+<div class="blog-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">Academy Blog</h1>
+                <p class="lead mb-4">Discover insights, tutorials, and updates from our learning community. Stay ahead with the latest trends in technology and education.</p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <form method="GET" action="{% url 'blog:search' %}" class="d-flex">
+                            <input type="text" name="query" class="form-control search-box me-2" 
+                                   placeholder="Search articles..." value="{{ request.GET.query }}">
+                            <button type="submit" class="btn btn-light px-4">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                <img src="{% static 'images/blog-hero.svg' %}" alt="Blog" class="img-fluid" style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <!-- Featured Posts Section -->
+    {% if featured_posts %}
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">Featured Articles</h2>
+            <a href="{% url 'blog:post_list' %}" class="btn btn-outline-primary">View All Posts</a>
+        </div>
+        
+        <div class="row">
+            {% for post in featured_posts %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card blog-card h-100 position-relative">
+                    <div class="featured-badge">
+                        <i class="fas fa-star"></i> Featured
+                    </div>
+                    
+                    {% if post.featured_image %}
+                    <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}">
+                    {% else %}
+                    <div class="bg-gradient" style="height: 200px; background: linear-gradient(45deg, #667eea, #764ba2);"></div>
+                    {% endif %}
+                    
+                    <div class="reading-time">
+                        <i class="fas fa-clock"></i> {{ post.reading_time }} min read
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        {% if post.category %}
+                        <span class="badge bg-primary mb-2 align-self-start">{{ post.category.name }}</span>
+                        {% endif %}
+                        
+                        <h5 class="card-title">
+                            <a href="{{ post.get_absolute_url }}" class="text-decoration-none text-dark">{{ post.title }}</a>
+                        </h5>
+                        
+                        <p class="card-text text-muted">{{ post.excerpt|truncatewords:20 }}</p>
+                        
+                        <div class="mt-auto">
+                            <div class="blog-meta d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}
+                                </div>
+                                <div>
+                                    <i class="fas fa-calendar"></i> {{ post.published_at|date:"M d, Y" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Recent Posts -->
+            <section class="mb-5">
+                <h2 class="fw-bold mb-4">Recent Articles</h2>
+                
+                <div class="row">
+                    {% for post in recent_posts %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card blog-card h-100">
+                            {% if post.featured_image %}
+                            <div class="position-relative">
+                                <img src="{{ post.featured_image.url }}" class="card-img-top" alt="{{ post.title }}">
+                                <div class="reading-time">
+                                    <i class="fas fa-clock"></i> {{ post.reading_time }} min read
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="bg-gradient position-relative" style="height: 200px; background: linear-gradient(45deg, #667eea, #764ba2);">
+                                <div class="reading-time">
+                                    <i class="fas fa-clock"></i> {{ post.reading_time }} min read
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-body d-flex flex-column">
+                                {% if post.category %}
+                                <span class="badge bg-secondary mb-2 align-self-start">{{ post.category.name }}</span>
+                                {% endif %}
+                                
+                                <h5 class="card-title">
+                                    <a href="{{ post.get_absolute_url }}" class="text-decoration-none text-dark">{{ post.title }}</a>
+                                </h5>
+                                
+                                <p class="card-text text-muted">{{ post.excerpt|truncatewords:15 }}</p>
+                                
+                                <div class="mt-auto">
+                                    <div class="blog-meta d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-user"></i> {{ post.author.get_full_name|default:post.author.username }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-eye"></i> {{ post.views_count }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{% url 'blog:post_list' %}" class="btn btn-primary btn-lg">View All Articles</a>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Newsletter Signup -->
+
+            <!-- Categories -->
+            {% if categories %}
+            <div class="sidebar-widget">
+                <h5><i class="fas fa-folder"></i> Categories</h5>
+                {% for category in categories %}
+                <div class="category-item d-flex justify-content-between">
+                    <a href="{{ category.get_absolute_url }}" class="text-decoration-none">{{ category.name }}</a>
+                    <span class="badge bg-light text-dark">{{ category.post_count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Popular Tags -->
+            {% if popular_tags %}
+            <div class="sidebar-widget">
+                <h5><i class="fas fa-tags"></i> Popular Tags</h5>
+                <div class="tag-cloud">
+                    {% for tag in popular_tags %}
+                    <a href="{{ tag.get_absolute_url }}" class="badge bg-light text-dark text-decoration-none">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
